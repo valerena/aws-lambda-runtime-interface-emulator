@@ -21,8 +21,8 @@ on:
 jobs:
   check-binary:
     runs-on: ubuntu-latest
-    outputs:
-      vulnerability: ${{steps.laststep.outputs}}
+    # outputs:
+    #   vulnerability: ${{steps.laststep.outputs}}
     steps:
       - uses: robinraju/release-downloader@v1.10
         with:
