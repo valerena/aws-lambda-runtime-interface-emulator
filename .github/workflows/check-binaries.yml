@@ -1,0 +1,51 @@
+name: Check binaries
+
+# on:
+#   pull_request:
+#     branches:
+#       - develop
+
+on: 
+  workflow_dispatch:
+    inputs:
+      text:
+        description: 'Dummy text'
+        default: 'No text'
+  # schedule:
+  #   - cron: "* * * * *"s
+
+jobs:
+  check-binary:
+    runs-on: ubuntu-latest
+    outputs:
+      vulnerability: ${{steps.laststep.outputs}}
+    steps:
+      - uses: robinraju/release-downloader@v1.10
+        with:
+          latest: true
+          fileName: 'aws-lambda-rie*'
+          out-file-path: "bin"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: check-binaries
+        run: make check-binaries
+      - id: laststep
+        run: cat $(ls -tr *.csv 2>/dev/null | tail -n1) >> "$GITHUB_OUTPUT"
+      # - id: laststep
+      #   run: cat $(ls -tr *.csv 2>/dev/null | tail -n1) >> "$GITHUB_OUTPUT"
+  # create-issue:
+  #   runs-on: ubuntu-latest
+  #   needs: check-binary
+  #   if: always() && needs.check-binary.outputs != ""
+  #   steps:
+  #     - name: Create Issue
+  #       uses: dacbd/create-issue-action@main
+  #       with:
+  #         token: ${{ github.token }}
+  #         title: |
+  #           CVEs found in latest RIE binaries
+  #         body: |
+  #           ##  CVEs found in latest RIE binaries:
+  #           > **${{ needs.check-binary.outputs}}**
+            
