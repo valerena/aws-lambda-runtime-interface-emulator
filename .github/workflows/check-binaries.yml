@@ -11,6 +11,10 @@ on:
       text:
         description: 'Dummy text'
         default: 'No text'
+  push:
+    branches:
+        - test-check
+
   # schedule:
   #   - cron: "* * * * *"s
 
