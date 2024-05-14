@@ -24,15 +24,15 @@ jobs:
     # outputs:
     #   vulnerability: ${{steps.laststep.outputs}}
     steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/checkout@v4
       - uses: robinraju/release-downloader@v1.10
         with:
           latest: true
           fileName: 'aws-lambda-rie*'
           out-file-path: "bin"
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
       - name: check-binaries
         run: make check-binaries
       - id: laststep
