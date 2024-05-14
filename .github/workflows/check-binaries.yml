@@ -29,6 +29,7 @@ jobs:
           latest: true
           fileName: 'aws-lambda-rie*'
           out-file-path: "bin"
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
