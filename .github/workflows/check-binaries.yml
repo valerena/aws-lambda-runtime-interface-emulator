@@ -21,8 +21,8 @@ on:
 jobs:
   check-binary:
     runs-on: ubuntu-latest
-    # outputs:
-    #   vulnerability: ${{steps.laststep.outputs}}
+    outputs:
+      report_contents: ${{ steps.save-output.outputs.report_contents }}
     steps:
       - uses: actions/setup-python@v5
         with:
@@ -33,24 +33,48 @@ jobs:
           latest: true
           fileName: 'aws-lambda-rie*'
           out-file-path: "bin"
-      - name: check-binaries
-        run: make check-binaries
-      - id: laststep
-        run: cat $(ls -tr *.csv 2>/dev/null | tail -n1) >> "$GITHUB_OUTPUT"
-      # - id: laststep
-      #   run: cat $(ls -tr *.csv 2>/dev/null | tail -n1) >> "$GITHUB_OUTPUT"
-  # create-issue:
-  #   runs-on: ubuntu-latest
-  #   needs: check-binary
-  #   if: always() && needs.check-binary.outputs != ""
-  #   steps:
-  #     - name: Create Issue
-  #       uses: dacbd/create-issue-action@main
-  #       with:
-  #         token: ${{ github.token }}
-  #         title: |
-  #           CVEs found in latest RIE binaries
-  #         body: |
-  #           ##  CVEs found in latest RIE binaries:
-  #           > **${{ needs.check-binary.outputs}}**
+      - name: Run check for vulnerabilities
+        id: check-binaries
+        run: |
+          make check-binaries
+      - if: always() && failure()   # Failure means there are vulnerabilities
+        id: save-output
+        name: Save output contents
+        run: |
+          report_csv="$(cat $(ls -tr output.cve-bin-*.csv 2>/dev/null | tail -n1))"   # last file generated
+          report="${report_csv}.txt"
+          awk -F',' '{n=split($10, path, "/"); print $2,$3,$4,$5,path[n]}' "$report_csv" | column -t > "$report"   # make the CSV nicer
+          echo "report_contents=$(cat $report)" >> "$GITHUB_OUTPUT"
+  create-issue:
+    runs-on: ubuntu-latest
+    needs: check-binary
+    if: always() && needs.check-binary.outputs.report_contents != ''
+    steps:
+      - name: Build new version and check
+        id: check-new-version
+        run: |
+          make compile-with-docker-all
+          latest_version=$(strings bin/aws-lambda-rie* | grep '^go1\.' | uniq)
+          echo "latest_version=$latest_version"
+          make check_binaries
+          exit_code=$?
+          if [ "$exit_code" != "0" ]; then
+            fixed="No"
+          else
+            fixed="Yes"
+          fi
+          echo fixed=$fixed" >> "$GITHUB_OUTPUT"
+
+      - name: Create Issue
+        id: create-issue
+        uses: dacbd/create-issue-action@main
+        with:
+          token: ${{ github.token }}
+          title: |
+            CVEs found in latest RIE release
+          body: |
+            ##  CVEs found in latest RIE release:
+            > **${{ needs.check-binary.outputs.report_contents }}**
             
+            #### Is this fixed by updating to the latest Go version (${{steps.check-new-version.outputs.latest_version}})?):
+              ${{ steps.check-new-version.outputs.fixed }}
