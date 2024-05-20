@@ -48,20 +48,14 @@ jobs:
           echo "report_contents<<EOF" >> "$GITHUB_OUTPUT"
           cat "$report" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
-
-  create-issue:
-    runs-on: ubuntu-latest
-    needs: check-for-vulnerabilities
-    if: always() && needs.check-for-vulnerabilities.outputs.report_contents != ''
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build new version and check
+      - if: always() && steps.save-output.outputs.report_contents != ''
+        name: Build new version and check
         id: check-new-version
         run: |
           make compile-with-docker-all
           latest_version=$(strings bin/aws-lambda-rie* | grep '^go1\.' | uniq)
           echo "latest_version=$latest_version"
-          make check_binaries
+          make check-binaries
           exit_code=$?
           if [ "$exit_code" != "0" ]; then
             fixed="No"
@@ -72,6 +66,10 @@ jobs:
           echo "Fixed=$fixed"
           echo "${{ steps.check-new-version.outputs.latest_version }}"
           echo "${{ needs.check-for-vulnerabilities.outputs.report_contents }}"
+      - name: Second step
+        id: second-step
+        run: |
+          echo "Echo echo echo  **${{ steps.check-new-version.outputs.fixed }}**"
 
       # - name: Create Issue
       #   id: create-issue
