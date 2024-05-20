@@ -45,7 +45,10 @@ jobs:
           echo "Vulnerabilities stored in $report_csv"
           report="${report_csv}.txt"
           awk -F',' '{n=split($10, path, "/"); print $2,$3,$4,$5,path[n]}' "$report_csv" | column -t > "$report"   # make the CSV nicer
-          echo "report_contents=$(cat $report)" >> "$GITHUB_OUTPUT"
+          echo "report_contents<<EOF" >> "$GITHUB_OUTPUT"
+          cat "$report" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
   create-issue:
     runs-on: ubuntu-latest
     needs: check-binary
