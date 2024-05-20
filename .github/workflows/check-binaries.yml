@@ -41,7 +41,7 @@ jobs:
         id: save-output
         name: Save output contents
         run: |
-          report_csv="$(cat $(ls -tr output.cve-bin-*.csv 2>/dev/null | tail -n1))"   # last file generated
+          report_csv="$(ls -tr output.cve-bin-*.csv 2>/dev/null | tail -n1)"   # last file generated
           echo "Vulnerabilities stored in $report_csv"
           report="${report_csv}.txt"
           awk -F',' '{n=split($10, path, "/"); print $2,$3,$4,$5,path[n]}' "$report_csv" | column -t > "$report"   # make the CSV nicer
@@ -80,5 +80,5 @@ jobs:
       #       ##  CVEs found in latest RIE release:
       #       > **${{ needs.check-binary.outputs.report_contents }}**
             
-      #       #### Is this fixed by updating to the latest Go version (${{steps.check-new-version.outputs.latest_version}})?):
-      #         ${{ steps.check-new-version.outputs.fixed }}
+      #       #### Is this fixed by just updating to the latest Go version (${{steps.check-new-version.outputs.latest_version}})?):
+      #         **${{ steps.check-new-version.outputs.fixed }}**
