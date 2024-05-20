@@ -19,7 +19,7 @@ on:
   #   - cron: "* * * * *"s
 
 jobs:
-  check-binary:
+  check-for-vulnerabilities:
     runs-on: ubuntu-latest
     outputs:
       report_contents: ${{ steps.save-output.outputs.report_contents }}
@@ -51,9 +51,10 @@ jobs:
 
   create-issue:
     runs-on: ubuntu-latest
-    needs: check-binary
-    if: always() && needs.check-binary.outputs.report_contents != ''
+    needs: check-for-vulnerabilities
+    if: always() && needs.check-for-vulnerabilities.outputs.report_contents != ''
     steps:
+      - uses: actions/checkout@v4
       - name: Build new version and check
         id: check-new-version
         run: |
@@ -70,7 +71,7 @@ jobs:
           echo "fixed=$fixed" >> "$GITHUB_OUTPUT"
           echo "Fixed=$fixed"
           echo "${{ steps.check-new-version.outputs.latest_version }}"
-          echo "${{ needs.check-binary-outputs.report_contents }}"
+          echo "${{ needs.check-for-vulnerabilities.outputs.report_contents }}"
 
       # - name: Create Issue
       #   id: create-issue
@@ -81,7 +82,7 @@ jobs:
       #       CVEs found in latest RIE release
       #     body: |
       #       ##  CVEs found in latest RIE release:
-      #       > **${{ needs.check-binary.outputs.report_contents }}**
+      #       > **${{ needs.check-for-vulnerabilities.outputs.report_contents }}**
             
-      #       #### Is this fixed by just updating to the latest Go version (${{steps.check-new-version.outputs.latest_version}})?):
+      #       #### Is this fixed by just updating to the latest Go version (${{ steps.check-new-version.outputs.latest_version }})?):
       #         **${{ steps.check-new-version.outputs.fixed }}**
