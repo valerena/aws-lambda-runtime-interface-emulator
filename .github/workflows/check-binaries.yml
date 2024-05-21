@@ -43,10 +43,10 @@ jobs:
         run: |
           report_csv="$(ls -tr output.cve-bin-*.csv 2>/dev/null | tail -n1)"   # last file generated
           echo "Vulnerabilities stored in $report_csv"
-          report="${report_csv}.txt"
-          awk -F',' '{n=split($10, path, "/"); print $2,$3,$4,$5,path[n]}' "$report_csv" | column -t > "$report"   # make the CSV nicer
+          final_report="${report_csv}.txt"
+          awk -F',' '{n=split($10, path, "/"); print $2,$3,$4,$5,path[n]}' "$report_csv" | column -t > "$final_report"   # make the CSV nicer
           echo "report_contents<<EOF" >> "$GITHUB_OUTPUT"
-          cat "$report" >> "$GITHUB_OUTPUT"
+          cat "$final_report" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
       - if: always() && steps.check-binaries.outcome == 'failure'
         name: Build new version and check
@@ -56,7 +56,7 @@ jobs:
           mv ./bin/* ./bin2
           make compile-with-docker-all
           latest_version=$(strings bin/aws-lambda-rie* | grep '^go1\.' | sort | uniq)
-          echo "latest_version=$latest_version"
+          echo "latest_version=$latest_version" >> "$GITHUB_OUTPUT"
           make check-binaries
       - if: always() && steps.check-binaries.outcome == 'failure'
         name: Save output for new version
@@ -69,10 +69,6 @@ jobs:
             fixed="Yes"
           fi
           echo "fixed=$fixed" >> "$GITHUB_OUTPUT"
-          echo "Fixed=$fixed"
-          echo "OUTCOME=${{ steps.check-new-version.outcome }}"
-          echo "latest-version: ${{ steps.check-new-version.outputs.latest_version }}"
-          echo "REPORT=[[${{ steps.save-output.outputs.report_contents }}]]"
       - if: always() && steps.check-binaries.outcome == 'failure'
         name: Create Issue
         id: create-issue
@@ -82,8 +78,10 @@ jobs:
           title: |
             CVEs found in latest RIE release
           body: |
-            ##  CVEs found in latest RIE release:
-            > **${{ steps.save-output.outputs.report_contents }}**
+            ###  CVEs found in latest RIE release
+            ```
+            ${{ steps.save-output.outputs.report_contents }}**
+            ```
             
-            #### Is this fixed by just updating to the latest Go version (${{ steps.check-new-version.outputs.latest_version }})?):
-              **${{ steps.check-new-version.outputs.fixed }}**
+            #### Is this fixed by just updating to the latest Go version (${{ steps.check-new-version.outputs.latest_version }})?:
+            > **${{ steps.save-new-version.outputs.fixed }}**
