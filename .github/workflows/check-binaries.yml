@@ -48,7 +48,7 @@ jobs:
           echo "report_contents<<EOF" >> "$GITHUB_OUTPUT"
           cat "$report" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
-      - if: always() && steps.save-output.outputs.report_contents != ''
+      - if: always() && steps.check-binaries.outcome == 'failure'
         name: Build new version and check
         id: check-new-version
         run: |
@@ -58,12 +58,12 @@ jobs:
           latest_version=$(strings bin/aws-lambda-rie* | grep '^go1\.' | sort | uniq)
           echo "latest_version=$latest_version"
           make check-binaries
-      - if: always()
+      - if: always() && steps.check-binaries.outcome == 'failure'
         name: Save output for new version
         id: save-new-version
         run: |
           exit_code=$?
-          if [ "${{ steps.check-new-version.outcome }}" != "success" ]; then
+          if [ "${{ steps.check-new-version.outcome }}" == "failure" ]; then
             fixed="No"
           else
             fixed="Yes"
@@ -72,23 +72,18 @@ jobs:
           echo "Fixed=$fixed"
           echo "OUTCOME=${{ steps.check-new-version.outcome }}"
           echo "latest-version: ${{ steps.check-new-version.outputs.latest_version }}"
-          echo "REPORT=[${{ steps.save-output.outputs.report_contents }}"
-      - if: always()
-        name: Second step
-        id: second-step
-        run: |
-          echo "Echo echo echo  **${{ steps.check-new-version.outputs.fixed }}**"
-      # - if: always()
-      #   name: Create Issue
-      #   id: create-issue
-      #   uses: dacbd/create-issue-action@main
-      #   with:
-      #     token: ${{ github.token }}
-      #     title: |
-      #       CVEs found in latest RIE release
-      #     body: |
-      #       ##  CVEs found in latest RIE release:
-      #       > **${{ steps.save-output.outputs.report_contents }}**
+          echo "REPORT=[[${{ steps.save-output.outputs.report_contents }}]]"
+      - if: always() && steps.check-binaries.outcome == 'failure'
+        name: Create Issue
+        id: create-issue
+        uses: dacbd/create-issue-action@main
+        with:
+          token: ${{ github.token }}
+          title: |
+            CVEs found in latest RIE release
+          body: |
+            ##  CVEs found in latest RIE release:
+            > **${{ steps.save-output.outputs.report_contents }}**
             
-      #       #### Is this fixed by just updating to the latest Go version (${{ steps.check-new-version.outputs.latest_version }})?):
-      #         **${{ steps.check-new-version.outputs.fixed }}**
+            #### Is this fixed by just updating to the latest Go version (${{ steps.check-new-version.outputs.latest_version }})?):
+              **${{ steps.check-new-version.outputs.fixed }}**
