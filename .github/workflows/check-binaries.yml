@@ -56,16 +56,21 @@ jobs:
           latest_version=$(strings bin/aws-lambda-rie* | grep '^go1\.' | uniq)
           echo "latest_version=$latest_version"
           make check-binaries
+      - if: always()
+        name: Save output for new version
+        id: save-new-version
+        run: |
           exit_code=$?
-          if [ "$exit_code" != "0" ]; then
+          if [ "${{ steps.check-new-version.outcome }}" != "success" ]; then
             fixed="No"
           else
             fixed="Yes"
           fi
           echo "fixed=$fixed" >> "$GITHUB_OUTPUT"
           echo "Fixed=$fixed"
-          echo "${{ steps.check-new-version.outputs.latest_version }}"
-          echo "${{ needs.check-for-vulnerabilities.outputs.report_contents }}"
+          echo "OUTCOME=${{ steps.check-new-version.outcome }}"
+          echo "latest-version: ${{ steps.check-new-version.outputs.latest_version }}"
+          echo "REPORT=[${{ steps.save-output.outputs.report_contents }}"
       - name: Second step
         id: second-step
         run: |
@@ -80,7 +85,7 @@ jobs:
       #       CVEs found in latest RIE release
       #     body: |
       #       ##  CVEs found in latest RIE release:
-      #       > **${{ needs.check-for-vulnerabilities.outputs.report_contents }}**
+      #       > **${{ steps.save-output.outputs.report_contents }}**
             
       #       #### Is this fixed by just updating to the latest Go version (${{ steps.check-new-version.outputs.latest_version }})?):
       #         **${{ steps.check-new-version.outputs.fixed }}**
