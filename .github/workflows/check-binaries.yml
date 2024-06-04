@@ -4,6 +4,9 @@ on:
   workflow_dispatch:
   schedule:
    - cron: "0 16 * * 1-5"  # min h d Mo DoW / 9am PST M-F
+  push:
+    branches:
+      - fix-check-run
 
 jobs:
   check-for-vulnerabilities:
