@@ -37,7 +37,11 @@ jobs:
         id: save-output
         run: |
           report_csv="$(ls -tr output.cve-bin-*.csv 2>/dev/null | tail -n1)"   # last file generated
-          echo "Vulnerabilities stored in $report_csv"
+          if [ -z "$report_csv" ]; then
+            echo "Failure when running check"
+          else
+            echo "Vulnerabilities stored in $report_csv"
+          fi
           final_report="${report_csv}.txt"
           awk -F',' '{n=split($10, path, "/"); print $2,$3,$4,$5,path[n]}' "$report_csv" | column -t > "$final_report"   # make the CSV nicer
           echo "report_contents<<EOF" >> "$GITHUB_OUTPUT"
