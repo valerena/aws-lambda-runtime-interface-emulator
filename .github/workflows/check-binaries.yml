@@ -20,8 +20,8 @@ jobs:
           python-version: '3.11'
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: main
+        # with:
+        #   ref: main
       - name: Download latest release
         uses: robinraju/release-downloader@v1.10
         with:
