@@ -38,7 +38,7 @@ jobs:
         run: |
           report_csv="$(ls -tr output.cve-bin-*.csv 2>/dev/null | tail -n1)"   # last file generated
           if [ -z "$report_csv" ]; then
-            echo "Failure when running check"
+            echo "No file with vulnerabilities. Probably a failure in previous step."
           else
             echo "Vulnerabilities stored in $report_csv"
           fi
