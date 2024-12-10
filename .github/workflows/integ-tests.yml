@@ -26,7 +26,7 @@ jobs:
         - name: run integration tests
           run: make integ-tests-with-docker-x86-64
   integ-tests-arm64:
-    runs-on: ubuntu-latest
+    runs-on: macos-14
     environment:
       name: integ-tests
     steps:
